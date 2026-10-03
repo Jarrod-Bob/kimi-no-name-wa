@@ -2,10 +2,13 @@ package httpapi
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -273,6 +276,20 @@ func TestGenerateModelTimeout(t *testing.T) {
 	rec := e.do(t, "POST", "/api/v1/names", map[string]any{"description": "x"})
 	if rec.Code != http.StatusGatewayTimeout || decode[apiError](t, rec).Error.Code != "model_timeout" {
 		t.Errorf("got %d %s, want 504 model_timeout", rec.Code, rec.Body)
+	}
+}
+
+func TestGenerateDialTimeoutIsUnreachable(t *testing.T) {
+	dialTimesOut := &http.Client{Transport: &http.Transport{
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			return nil, &net.OpError{Op: "dial", Net: network, Err: os.ErrDeadlineExceeded}
+		},
+	}}
+	e := newEnvWithClient(t, dialTimesOut)
+
+	rec := e.do(t, "POST", "/api/v1/names", map[string]any{"description": "x"})
+	if rec.Code != http.StatusServiceUnavailable || decode[apiError](t, rec).Error.Code != "ollama_unreachable" {
+		t.Errorf("got %d %s, want 503 ollama_unreachable", rec.Code, rec.Body)
 	}
 }
 

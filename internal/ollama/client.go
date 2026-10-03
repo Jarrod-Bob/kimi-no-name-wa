@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -206,10 +207,13 @@ func (c *Client) do(ctx context.Context, method, path string, in, out any) error
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		// The client's own timeout means Ollama accepted the request but
+		// A timeout after connecting means Ollama accepted the request but
 		// didn't answer in time, which is normal while a big model loads.
+		// Timing out while connecting means nothing answered at all.
 		var urlErr *url.Error
-		if errors.As(err, &urlErr) && urlErr.Timeout() {
+		var opErr *net.OpError
+		dialFailed := errors.As(err, &opErr) && opErr.Op == "dial"
+		if !dialFailed && errors.As(err, &urlErr) && urlErr.Timeout() {
 			return fmt.Errorf("%w: %v", context.DeadlineExceeded, err)
 		}
 		return &UnreachableError{URL: c.BaseURL, Err: err}
