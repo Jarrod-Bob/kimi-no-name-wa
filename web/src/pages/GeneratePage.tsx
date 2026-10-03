@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { flushSync } from 'react-dom';
 import { api, ApiError, type Generation, type NameIdea } from '../api';
 import { ChipInput } from '../components/ChipInput';
 import { NameCard } from '../components/NameCard';
@@ -7,6 +8,9 @@ import { RerollIcon, SparkIcon } from '../components/icons';
 import { shownNames } from '../lib/names';
 import { MAX_COUNT, TONES } from '../lib/tones';
 import { emptyDraft, useAppState, type Draft } from '../session/AppState';
+
+// The server refuses more; it only reads the newest few anyway.
+const MAX_AVOID = 500;
 
 const EXAMPLE: Draft = {
   ...emptyDraft,
@@ -34,6 +38,10 @@ export function GeneratePage() {
   const abortRef = useRef<AbortController | null>(null);
   const resultsRef = useRef<HTMLHeadingElement | null>(null);
   const [focusLatest, setFocusLatest] = useState(false);
+  const latestDraft = useRef(draft);
+  useLayoutEffect(() => {
+    latestDraft.current = draft;
+  }, [draft]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
   useEffect(() => {
@@ -66,7 +74,7 @@ export function GeneratePage() {
           keywords: inputs.keywords,
           tones: inputs.tones,
           count: draft.count,
-          avoid: shownNames(sameProject),
+          avoid: shownNames(sameProject).slice(-MAX_AVOID),
           like: like ? { name: like.name, technique: like.technique, explanation: like.explanation } : undefined,
           client: 'web',
         },
@@ -87,20 +95,23 @@ export function GeneratePage() {
     }
   };
 
-  const fromDraft = (): Ask => ({
-    inputs: { description: draft.description, inspiration: draft.inspiration, keywords: draft.keywords, tones: draft.tones },
+  const fromDraft = (d: Draft): Ask => ({
+    inputs: { description: d.description, inspiration: d.inspiration, keywords: d.keywords, tones: d.tones },
     label: 'Finding names',
   });
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
-    void generate(fromDraft());
+    void generate(fromDraft(draft));
   };
 
   const onFormKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      void generate(fromDraft());
+      // A chip box commits its typed text on this same keypress; render that
+      // before reading the draft so the text is in the request.
+      flushSync(() => {});
+      void generate(fromDraft(latestDraft.current));
     }
   };
 

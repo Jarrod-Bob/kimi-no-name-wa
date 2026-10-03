@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Jarrod-Bob/kimi-no-name-wa/internal/db"
 	"github.com/Jarrod-Bob/kimi-no-name-wa/internal/history"
@@ -28,6 +29,13 @@ type testEnv struct {
 // pulled, a fake GitHub/npm, and a stub frontend. Nothing reaches a real
 // model or network service.
 func newEnv(t *testing.T) *testEnv {
+	t.Helper()
+	return newEnvWithClient(t, nil)
+}
+
+// newEnvWithClient is newEnv with the HTTP client used to reach Ollama
+// replaced, e.g. to give it a short timeout; nil keeps the fake's client.
+func newEnvWithClient(t *testing.T, ollamaHTTP *http.Client) *testEnv {
 	t.Helper()
 	database, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {
@@ -52,6 +60,9 @@ func newEnv(t *testing.T) *testEnv {
 	checker := namecheck.New()
 	checker.GitHubAPI, checker.NPMAPI = services.URL, services.URL
 
+	if ollamaHTTP == nil {
+		ollamaHTTP = fake.Client()
+	}
 	stub := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		w.Write([]byte("<html>stub spa</html>"))
@@ -59,7 +70,7 @@ func newEnv(t *testing.T) *testEnv {
 	return &testEnv{
 		srv: NewServer(Deps{
 			Settings: store, History: history.NewStore(database), Checker: checker,
-			OllamaHTTP: fake.Client(), Frontend: stub,
+			OllamaHTTP: ollamaHTTP, Frontend: stub,
 		}),
 		settings: store,
 		fake:     fake,
@@ -243,6 +254,25 @@ func TestGenerateErrors(t *testing.T) {
 	hist := decode[struct{ Generations []history.Generation }](t, e.do(t, "GET", "/api/v1/generations", nil))
 	if len(hist.Generations) != 0 {
 		t.Errorf("failed generations were recorded: %+v", hist)
+	}
+}
+
+func TestGenerateModelTimeout(t *testing.T) {
+	slow := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-r.Context().Done():
+		case <-time.After(5 * time.Second):
+		}
+	}))
+	t.Cleanup(slow.Close)
+	e := newEnvWithClient(t, &http.Client{Timeout: 50 * time.Millisecond})
+	if _, err := ollama.SaveConfig(t.Context(), e.settings, ollama.Config{URL: slow.URL, Model: ollama.DefaultModel}); err != nil {
+		t.Fatal(err)
+	}
+
+	rec := e.do(t, "POST", "/api/v1/names", map[string]any{"description": "x"})
+	if rec.Code != http.StatusGatewayTimeout || decode[apiError](t, rec).Error.Code != "model_timeout" {
+		t.Errorf("got %d %s, want 504 model_timeout", rec.Code, rec.Body)
 	}
 }
 

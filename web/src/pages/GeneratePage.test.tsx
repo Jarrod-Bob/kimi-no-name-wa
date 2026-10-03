@@ -133,6 +133,39 @@ describe('GeneratePage', () => {
     expect(screen.getByRole('heading', { name: /More like “skimurai”/ })).toBeTruthy();
   });
 
+  it('keeps text typed in a chip box when submitting with Ctrl+Enter', async () => {
+    renderPage();
+    fireEvent.change(screen.getByLabelText('Describe it'), { target: { value: 'fast reader' } });
+    const inspiration = screen.getByLabelText('Surroundings & inspiration');
+    fireEvent.change(inspiration, { target: { value: 'cold brew' } });
+    fireEvent.keyDown(inspiration, { key: 'Enter', ctrlKey: true });
+    await settle();
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0].inspiration).toEqual(['cold brew']);
+  });
+
+  it('sends only the newest 500 shown names to avoid', async () => {
+    const many = Array.from({ length: 300 }, (_, i) => `name${i}`);
+    nextNames = [many.slice(0, 150), many.slice(150), ['fresh']];
+    renderPage();
+    fireEvent.change(screen.getByLabelText('Describe it'), { target: { value: 'fast reader' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Name it' }));
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: /Re-roll/ }));
+    await settle();
+    nextNames.unshift(Array.from({ length: 300 }, (_, i) => `more${i}`));
+    fireEvent.click(screen.getByRole('button', { name: /Re-roll/ }));
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: /Re-roll/ }));
+    await settle();
+
+    const avoid = requests[3].avoid ?? [];
+    expect(avoid).toHaveLength(500);
+    expect(avoid[0]).toBe('name100');
+    expect(avoid.at(-1)).toBe('more299');
+  });
+
   it('stars a name and shows it pressed', async () => {
     renderPage();
     fireEvent.change(screen.getByLabelText('Describe it'), { target: { value: 'fast reader' } });

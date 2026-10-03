@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -204,6 +205,12 @@ func (c *Client) do(ctx context.Context, method, path string, in, out any) error
 	if err != nil {
 		if ctx.Err() != nil {
 			return ctx.Err()
+		}
+		// The client's own timeout means Ollama accepted the request but
+		// didn't answer in time, which is normal while a big model loads.
+		var urlErr *url.Error
+		if errors.As(err, &urlErr) && urlErr.Timeout() {
+			return fmt.Errorf("%w: %v", context.DeadlineExceeded, err)
 		}
 		return &UnreachableError{URL: c.BaseURL, Err: err}
 	}

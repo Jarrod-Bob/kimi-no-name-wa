@@ -26,7 +26,10 @@ export function ChipInput({ label, hint, placeholder, value, onChange }: Props) 
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if ((e.key === 'Enter' && !e.ctrlKey && !e.metaKey) || e.key === ',') {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      // Ctrl/Cmd+Enter submits the form; keep what's typed in the request.
+      commit();
+    } else if (e.key === 'Enter' || e.key === ',') {
       if (text.trim() !== '') {
         e.preventDefault();
         commit();
