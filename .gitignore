@@ -1,0 +1,10 @@
+node_modules/
+internal/web/dist/*
+!internal/web/dist/.gitkeep
+*.db
+*.db-wal
+*.db-shm
+kimi-no-name-wa.exe
+/kimi-no-name-wa
+.claude/worktrees/
+.superpowers/

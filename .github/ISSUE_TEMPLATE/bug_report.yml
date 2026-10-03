@@ -1,0 +1,66 @@
+name: Bug Report
+description: Something in kimi-no-name-wa is broken or behaving unexpectedly
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. The build identifier is in the page footer ("build abc1234").
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug. What did you see?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. See ...
+    validations:
+      required: false
+  - type: input
+    id: page
+    attributes:
+      label: Page or API endpoint
+      description: Where it happened, e.g. `/history` or `POST /api/v1/names`.
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: kimi-no-name-wa build
+      description: The build identifier (git commit) from the page footer.
+    validations:
+      required: false
+  - type: input
+    id: model
+    attributes:
+      label: Ollama version and model
+      description: From Settings, e.g. `Ollama 0.12.3, gemma4:31b`.
+    validations:
+      required: false
+  - type: input
+    id: browser
+    attributes:
+      label: Browser / OS
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context and screenshots
+      description: Anything else that helps. You can paste or drag screenshots straight into this box.
+    validations:
+      required: false
