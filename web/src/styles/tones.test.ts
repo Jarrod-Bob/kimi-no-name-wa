@@ -26,12 +26,14 @@ describe('tone colours', () => {
     return getComputedStyle(el).getPropertyValue('--tone').trim();
   }
 
-  it.each(TONES.map((t) => t.id))('colours the %s tone tag and toggle', (id) => {
+  it.each(TONES.map((t) => t.id))('colours the %s tone tag, toggle and history dot', (id) => {
     expect(toneOf(`tone-tag tone-${id}`)).toBe(`var(--t-${id})`);
     expect(toneOf(`tone-toggle tone-${id}`)).toBe(`var(--t-${id})`);
+    expect(toneOf(`mini-tone tone-${id}`)).toBe(`var(--t-${id})`);
   });
 
   it('falls back to ink without a tone class', () => {
     expect(toneOf('tone-tag')).toBe('var(--ink-2)');
+    expect(toneOf('mini-tone')).toBe('var(--ink-2)');
   });
 });
