@@ -684,6 +684,12 @@ input:not([type]):focus,
   color: var(--card);
 }
 
+/* Fallback for name-card tone tags and history tone dots. It must come
+   before the .tone-* rules below, which share its specificity and so win
+   only by coming later. */
+.tone-tag,
+.mini-tone { --tone: var(--ink-2); }
+
 .tone-witty { --tone: var(--t-witty); }
 .tone-punny { --tone: var(--t-punny); }
 .tone-sleek { --tone: var(--t-sleek); }
@@ -913,7 +919,6 @@ kbd {
 }
 
 .tone-tag {
-  --tone: var(--ink-2);
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -1363,7 +1368,6 @@ kbd {
 }
 
 .mini-tone {
-  --tone: var(--ink-2);
   display: grid;
   place-items: center;
   width: 20px;
