@@ -52,6 +52,14 @@
   font-style: normal;
   font-display: swap;
   font-weight: 800;
+  src: url('@fontsource/shippori-mincho/files/shippori-mincho-96-800-normal.woff2') format('woff2');
+  unicode-range: U+4e03,U+4f38,U+50b7,U+5264,U+5348,U+5371,U+585a,U+58ca,U+5951,U+59b9,U+59d4,U+5b98,U+5f8b,U+6388,U+64cd,U+65e7,U+6803,U+6b6f,U+6d66,U+6e0b,U+6ecb,U+6fc3,U+72ac,U+773c,U+77e2,U+7968,U+7a74,U+7dba,U+7dd1,U+7e3e,U+808c,U+811a,U+8179,U+8239,U+8584,U+8a0e,U+8a72,U+8b66,U+8c46,U+8f29,U+90a3,U+9234,U+96f0,U+9769,U+9774,U+9aa8,U+ff26,U+ff28,U+ff9e-ff9f;
+}
+@font-face {
+  font-family: 'Shippori Mincho';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 800;
   src: url('@fontsource/shippori-mincho/files/shippori-mincho-98-800-normal.woff2') format('woff2');
   unicode-range: U+25cb,U+4e71,U+4f59,U+50d5,U+520a,U+5217,U+5230,U+523a-523b,U+541b,U+5439,U+5747,U+59c9,U+5bdf,U+5c31,U+5de8,U+5e7c,U+5f69,U+6050,U+60d1,U+63cf,U+663c,U+67c4,U+6885,U+6c38,U+6d6e,U+6db2,U+6df7,U+6e2c,U+6f5f,U+7532,U+76e3-76e4,U+7701,U+793c,U+79f0,U+7a93,U+7d00,U+7de0,U+7e54,U+8328,U+8840,U+969c,U+96e8,U+9811,U+9aea,U+9b5a,U+ff24,U+ff2e,U+ff57;
 }
