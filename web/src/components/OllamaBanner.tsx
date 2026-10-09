@@ -27,13 +27,10 @@ export function OllamaBanner() {
             {model} won’t load
           </h2>
           <p>{health?.ollama.error}</p>
-          <ol className="banner-steps">
-            <li>Check Ollama’s log at {health?.ollama.url}, or the GPU on the machine it runs on.</li>
-            <li>
-              Generate again once it’s fixed; this clears as soon as names come back. A different model? Change it
-              in <Link to="/settings">Settings</Link>.
-            </li>
-          </ol>
+          <p>
+            This clears as soon as a generation works. A different model? Change it in{' '}
+            <Link to="/settings">Settings</Link>.
+          </p>
         </div>
       </section>
     );
