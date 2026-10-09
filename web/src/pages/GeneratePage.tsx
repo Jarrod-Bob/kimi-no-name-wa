@@ -82,11 +82,13 @@ export function GeneratePage() {
       );
       addBatch(batch);
       setFocusLatest(true);
+      // A working generation clears a model that failed to load last time.
+      if (health?.status === 'degraded') void refreshHealth();
     } catch (err) {
       if (controller.signal.aborted) return;
       const apiErr = err instanceof ApiError ? err : new ApiError('Generating failed.', 0, '');
       setError(apiErr);
-      if (apiErr.code === 'ollama_unreachable' || apiErr.code === 'model_missing') void refreshHealth();
+      if (['ollama_unreachable', 'model_missing', 'model_error'].includes(apiErr.code)) void refreshHealth();
     } finally {
       if (abortRef.current === controller) {
         abortRef.current = null;

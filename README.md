@@ -178,7 +178,7 @@ Errors:
 | 503 | `model_missing` | Ollama is running but the model isn't pulled. The message includes the `ollama pull` command. |
 | 504 | `model_timeout` | The model didn't answer in 5 minutes. |
 | 502 | `no_names` | The model answered twice without one usable name. |
-| 502 | `model_error` | Ollama failed some other way. The message has its error. |
+| 502 | `model_error` | Ollama failed some other way, such as not being able to load the model. The message has its error, and [health](#get-apiv1health-is-the-model-ready) reports `degraded` until a generation works again. |
 
 Example:
 
@@ -191,6 +191,8 @@ curl -s http://127.0.0.1:7799/api/v1/names \
 ### `GET /api/v1/health`: is the model ready?
 
 Always `200` while the app is running. `status` is `"ok"` when names can be generated, else `"degraded"`, with `ollama.error` saying why and what to do.
+
+Health doesn't load the model itself, so it can't see a model that is pulled but won't run (say, the GPU on Ollama's host fails to initialise) until a generation tries it. After `POST /api/v1/names` fails with `model_error`, health reports `"degraded"` with an `error` saying the model failed to load, until a generation with the same URL and model succeeds.
 
 ```json
 {
