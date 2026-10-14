@@ -333,6 +333,60 @@ func TestHealth(t *testing.T) {
 	}
 }
 
+func TestHealthAfterModelError(t *testing.T) {
+	e := newEnv(t)
+	type health struct {
+		Status string        `json:"status"`
+		Ollama ollama.Health `json:"ollama"`
+	}
+	brief := map[string]any{"description": "x"}
+
+	if h := decode[health](t, e.do(t, "GET", "/api/v1/health", nil)); h.Status != "ok" || h.Ollama.Error != "" {
+		t.Fatalf("before any generation: %+v", h)
+	}
+
+	// The model is pulled and Ollama answers, but it can't load the model.
+	e.fake.ChatStatus, e.fake.ChatError = 500, "llama runner process has terminated: CUDA error"
+	rec := e.do(t, "POST", "/api/v1/names", brief)
+	if rec.Code != 502 || decode[apiError](t, rec).Error.Code != "model_error" {
+		t.Fatalf("generate: %d %s, want 502 model_error", rec.Code, rec.Body)
+	}
+	h := decode[health](t, e.do(t, "GET", "/api/v1/health", nil))
+	if h.Status != "degraded" || h.Ollama.Error != modelLoadError || !h.Ollama.Reachable || !h.Ollama.ModelPulled {
+		t.Errorf("after model_error: %+v", h)
+	}
+
+	// Other settings haven't failed; switching back still remembers.
+	ollama.SaveConfig(t.Context(), e.settings, ollama.Config{URL: e.fake.URL, Model: "qwen3:32b"})
+	e.fake.Models = append(e.fake.Models, "qwen3:32b")
+	if h := decode[health](t, e.do(t, "GET", "/api/v1/health", nil)); h.Status != "ok" {
+		t.Errorf("other model: %+v", h)
+	}
+	ollama.SaveConfig(t.Context(), e.settings, ollama.Config{URL: e.fake.URL, Model: ollama.DefaultModel})
+	if h := decode[health](t, e.do(t, "GET", "/api/v1/health", nil)); h.Status != "degraded" {
+		t.Errorf("back to the failed model: %+v", h)
+	}
+
+	// A failure that isn't model_error leaves it as it was.
+	e.fake.ChatStatus = 0
+	e.fake.SetReplies("no json here")
+	if rec := e.do(t, "POST", "/api/v1/names", brief); decode[apiError](t, rec).Error.Code != "no_names" {
+		t.Fatalf("generate: %d %s, want no_names", rec.Code, rec.Body)
+	}
+	if h := decode[health](t, e.do(t, "GET", "/api/v1/health", nil)); h.Status != "degraded" {
+		t.Errorf("after no_names: %+v", h)
+	}
+
+	// The next generation that works clears it.
+	e.fake.SetReplies(reply("acceleread", "skimurai"))
+	if rec := e.do(t, "POST", "/api/v1/names", brief); rec.Code != 200 {
+		t.Fatalf("generate: %d %s", rec.Code, rec.Body)
+	}
+	if h := decode[health](t, e.do(t, "GET", "/api/v1/health", nil)); h.Status != "ok" || h.Ollama.Error != "" {
+		t.Errorf("after recovery: %+v", h)
+	}
+}
+
 func TestSettingsRoundTrip(t *testing.T) {
 	e := newEnv(t)
 	rec := e.do(t, "PUT", "/api/v1/settings", map[string]string{"ollama_url": "http://192.168.1.5:11434/", "model": "gemma4:12b"})

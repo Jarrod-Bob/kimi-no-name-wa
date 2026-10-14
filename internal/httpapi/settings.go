@@ -17,6 +17,10 @@ type healthResponse struct {
 	Ollama ollama.Health `json:"ollama"`
 }
 
+// modelLoadError is health's error after a generation failed with
+// model_error. It clears once a generation with the same settings works.
+const modelLoadError = "The model failed to load or run on the last try, so names can't be generated. Check Ollama's log or the GPU on its host, then generate again."
+
 func (s *server) health(w http.ResponseWriter, r *http.Request) {
 	cfg, err := ollama.LoadConfig(r.Context(), s.Settings)
 	if err != nil {
@@ -28,6 +32,9 @@ func (s *server) health(w http.ResponseWriter, r *http.Request) {
 	status := "ok"
 	if !h.Ready() {
 		status = "degraded"
+	} else if s.modelFailure.failedFor(cfg) {
+		status = "degraded"
+		h.Error = modelLoadError
 	}
 	writeJSON(w, http.StatusOK, healthResponse{Status: status, Ollama: h})
 }

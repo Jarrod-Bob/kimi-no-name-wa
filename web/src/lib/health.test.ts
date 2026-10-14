@@ -16,11 +16,13 @@ describe('healthState', () => {
     expect(healthState(health(false, false), false)).toBe('offline');
     expect(healthState(health(true, false), false)).toBe('no-model');
     expect(healthState(health(true, true), false)).toBe('ready');
+    expect(healthState({ ...health(true, true), status: 'degraded' }, false)).toBe('load-failed');
   });
 
   it('labels each state', () => {
     expect(healthLabel('ready', 'gemma4:31b')).toBe('gemma4:31b ready');
     expect(healthLabel('no-model', 'gemma4:31b')).toBe('gemma4:31b not pulled');
+    expect(healthLabel('load-failed', 'gemma4:31b')).toBe('gemma4:31b won’t load');
     expect(healthLabel('offline', '')).toBe('Ollama offline');
   });
 });

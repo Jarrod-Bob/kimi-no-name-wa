@@ -344,7 +344,8 @@ button:disabled {
   box-shadow: 0 0 0 3px rgb(255 195 90 / 25%);
 }
 
-.offline .status-dot {
+.offline .status-dot,
+.load-failed .status-dot {
   background: #ff7d8f;
   box-shadow: 0 0 0 3px rgb(255 125 143 / 25%);
 }

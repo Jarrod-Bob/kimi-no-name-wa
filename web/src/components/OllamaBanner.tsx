@@ -5,7 +5,8 @@ import { CopyIcon } from './icons';
 
 /**
  * Explains what's missing when names can't be generated yet: Ollama not
- * installed or running, or the model not pulled. Hidden once ready.
+ * installed or running, the model not pulled, or the model failing to load
+ * on the last try. Hidden once ready.
  */
 export function OllamaBanner() {
   const { health, healthFailed, refreshHealth, copy } = useAppState();
@@ -14,6 +15,26 @@ export function OllamaBanner() {
 
   const model = health?.ollama.model ?? 'gemma4:31b';
   const pull = `ollama pull ${model}`;
+
+  if (state === 'load-failed') {
+    return (
+      <section className="banner" role="status" aria-labelledby="banner-title">
+        <div className="banner-moon" aria-hidden="true">
+          壊
+        </div>
+        <div className="banner-body">
+          <h2 id="banner-title" className="banner-title">
+            {model} won’t load
+          </h2>
+          <p>{health?.ollama.error}</p>
+          <p>
+            This clears as soon as a generation works. A different model? Change it in{' '}
+            <Link to="/settings">Settings</Link>.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="banner" role="status" aria-labelledby="banner-title">

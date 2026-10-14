@@ -28,6 +28,7 @@ type Deps struct {
 
 type server struct {
 	Deps
+	modelFailure modelFailure
 }
 
 // NewServer builds the full handler: API routes plus the embedded frontend.
